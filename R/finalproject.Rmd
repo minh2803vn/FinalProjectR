@@ -9,22 +9,82 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r}
+deck = rep(c(1:10, 10, 10, 10), 4)
 
-```{r cars}
-summary(cars)
+shuffle_decks = function(n){ 
+  sample(rep(deck, n))
+}
+
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+handValue = function(cards) {
+  value = sum(cards)
+  # Check for an Ace and change value if it doesn’t bust
+  if (any(cards == 1) && value <= 11){
+  value = value + 10
+  }
+  # Check bust (set to 0); check black jack (set to 21.5)
+  if(value > 21){
+  return(0)
+  }
+  else if (value == 21 && length(cards) == 2){
+    return(21.5) # Blackjack
+  }
+  else{
+  return(value)
+  }
+}
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+winnings = function(dealer, players){
+  (players > dealer & players > 21) * 1.5 + # blackjack
+  (players > dealer & players <= 21) * 1 + # win
+  (players < dealer | players == 0) * -1 # lose
+}
+```
+
+```{r}
+test_cards = list(c(10, 1), c(10, 5, 6), c(10, 1, 1),
+    c(7, 6, 1, 5), c(3, 6, 1, 1),
+    c(2, 3, 4, 10), c(5, 1, 9, 1, 1),
+    c(5, 10, 7), c(10, 9, 1, 1, 1))
+
+test_cards_val = c(21.5, 21, 12, 19, 21, 19, 17, 0, 0)
+
+identical(test_cards_val, sapply(test_cards, handValue))
+
+test_vals = c(0, 16, 19, 20, 21, 21.5)
+testWinnings =
+ matrix(c(-1, 1, 1, 1, 1, 1.5,
+          -1, 0, 1, 1, 1, 1.5,
+          -1, -1, 0, 1, 1, 1.5,
+          -1, -1, -1, 0, 1, 1.5,
+          -1, -1, -1, -1, 0, 1.5,
+            -1, -1, -1, -1, -1, 0),
+   nrow = length(test_vals), byrow = TRUE)
+dimnames(testWinnings) = list(dealer = test_vals,
+      player = test_vals)
+testWinnings
+
+check = testWinnings
+check[] = NA
+for(i in seq_along(test_vals)) {
+  for(j in seq_along(test_vals)) {
+ check[i, j] = winnings(test_vals[i], test_vals[j])
+ }
+}
+identical(check, testWinnings)
+
+
+
+
+
+
+```
+
+

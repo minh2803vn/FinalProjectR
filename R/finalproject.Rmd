@@ -1,6 +1,6 @@
 ---
 title: "Finalproject"
-author: ""
+author: "Thanh Minh"
 date: "2023-04-21"
 output: html_document
 ---

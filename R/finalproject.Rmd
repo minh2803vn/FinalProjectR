@@ -79,12 +79,117 @@ for(i in seq_along(test_vals)) {
  }
 }
 identical(check, testWinnings)
+```
 
+#### Background: Blackjack
+We start our computer model of blackjack with a model for a deck of cards that is relevant to blackjack.Each suit has a card labeled 2, 3, ..., 10 and a Jack, Queen, King, and Ace. The Jack, Queen, and King all have the same value (10). In the beginning of the game:
 
+```{r}
+deck <- rep(c(1:10, 10, 10, 10), 4)
+deck
 
+# Shuffle the deck
+deck <- sample(deck)
+  
+# Deal two cards to the player and the dealer
+player_hand <- deck[1:2]
+player_hand
+dealer_hand <- deck[3:4]
+dealer_hand
+```
 
+#### Count Hand Value
+In blackjack, the player’s hand has 2 or more cards, and if the total value of the cards in the hand exceeds that of the dealer’s hand, but does not exceed 21, then the player wins. First, we have to compute the value of a hand of cards. This function should allow us to compare 2 hands of cards to see which is the winner.
 
+```{r}
+#'card' is a vector
 
+handValue <- function(cards) {
+  value = sum(cards)
+  # Check for an Ace and change value if it doesn’t bust
+  if ((any(cards == 1) && value <= 11)) {
+    value = value + 10
+  }
+  # Check bust (set to 0); 
+  if(value > 21) {
+    value = 0
+    print("Bust")
+  }
+  # check black jack (set to 21.5)
+  else if (value == 21 && length(cards) == 2) {
+    value = 21.5 # Blackjack 
+    print("BLACKJACK")
+  }
+  else if (value == 21 && length(cards) > 2) {
+    value = 21.5 # Blackjack 
+    print("MEGA BLACKJACK")
+  }
+  else {print(value)}
+}
+
+bust <- c(10,10,2)
+handValue(bust)
+
+blackjack <- c(10,1)
+handValue(blackjack)
+megablackjack <- c(10,5,6)
+handValue(megablackjack)
+nothing <- c(10,2)
+handValue(nothing)
+
+handValue(player_hand)
+handValue(dealer_hand)
+```
+#### Who wins?
+To compute the winnings, we need to know the value of the player’s hand and the dealer’s hand. In blackjack, there are several scenario:
+1/ If the player goes bust then the player loses, even if the dealer also goes bust.
+2/ If the player gets blackjack and the dealer does not have blackjack, the player win
+3/ If both the dealer and the player have blackjack, then who ever have more cards win. If both have the same number of cards, they are tie
+4/ If both the player and the dealer don;t have blackjack, then whoever has the the higher, unbusted hand win
+```{r}
+# There is only one player, but there are many players
+winnings <- function(dealer, players) {
+    if (any(players > 21)) {
+      # players busted
+      print("ONE PLAYER LOST")
+    }
+  else if ((dealer > 21) && any(players <= 21)) {
+      # dealer busted
+    print("ONE PLAYER WIN")
+    }
+    else if ((any(players == 21)) && (dealer < 21)) {
+      print("ONE PLAYER WIN")
+    }
+    else if ((any(players == 21)) && (dealer == 21)) {
+      if (any(players == "MEGA BLACKJACK")) {
+        print("ONE PLAYER WIN")
+      }
+      else if (dealer == "MEGA BLACKJACK") {
+        print("ONE PLAYER LOST")
+      }
+    }
+    else {
+      if (any(players > dealer)) {
+        print("ONE PLAYER WIN")
+      }
+      else {
+        print("DEALER WIN")
+      }
+    }
+}
+winnings(dealer_hand,player_hand)
+```
+#### Stragety for the player
+If the player initial two cards are less than 21, the player has two strategies:
+1/ Risk-taking: Take another ONE card, or
+2/ Play safe: Stop
+```{r}
+#Aggressive strategy:
+aggressive <- function(dealer, players) {
+  if (handValue(players) < 21) {
+    players <- c(players, sample(deck, 1, replace = TRUE))
+  }
+}
 ```
 
 

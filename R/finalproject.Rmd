@@ -424,3 +424,342 @@ mean(diffs)
 sd(diffs)
 
 ```
+
+#### Background: Blackjack
+We start our computer model of blackjack with a model for a deck of cards that is relevant to blackjack.Each suit has a card labeled 2, 3, ..., 10 and a Jack, Queen, King, and Ace. The Jack, Queen, and King all have the same value (10). In the beginning of the game:
+
+```{r}
+deck <- rep(c(1:10, 10, 10, 10), 4)
+deck
+
+# Shuffle the deck
+deck <- sample(deck)
+  
+# Deal two cards to the player and the dealer
+player_hand <- deck[1:2]
+player_hand
+dealer_hand <- deck[3:4]
+dealer_hand
+```
+
+#### Count Hand Value
+In blackjack, the player’s hand has 2 or more cards, and if the total value of the cards in the hand exceeds that of the dealer’s hand, but does not exceed 21, then the player wins. First, we have to compute the value of a hand of cards. This function should allow us to compare 2 hands of cards to see which is the winner.
+
+```{r}
+#'card' is a vector
+handValue <- function(cards) {
+  value = sum(cards)
+  # Check for an Ace and change value if it doesn’t bust
+  if ((any(cards == 1) && value <= 11)) {
+    value = value + 10
+  }
+  # Check bust (set to 0); 
+  if(value > 21) {
+    return(0)
+  }
+  # check black jack (set to 21.5)
+  else if (value == 21 && length(cards) == 2) {
+    return(22.5) # Natural Blackjack 
+  }
+  else if (value == 21 && length(cards) > 2) {
+    return(21.5) # 21 with three or more cards
+  }
+  else {
+    return(value)
+  }
+}
+
+bust <- c(10,10,2)
+nothinglow <- c(10,2)
+nothinghigh <- c(10,10)
+normalblackjack <- c(10,5,6)
+natural <- c(10,1)
+```
+#### Who wins?
+To compute the winnings, we need to know the value of the player’s hand and the dealer’s hand. In blackjack, there are several scenario:
+1/ If the player goes bust then the player loses, even if the dealer also goes bust.
+2/ If the player gets blackjack and the dealer does not have blackjack, the player win
+3/ If both the dealer and the player have blackjack, then who ever have more cards win. If both have the same number of cards, they are tie
+4/ If both the player and the dealer don;t have blackjack, then whoever has the the higher, unbusted hand win
+```{r}
+# There is only one player, but there are many players
+winnings <- function(dealer, players) {
+playerwin = T
+    if ((players == 0) &&  (players != 21.5) &&  (players != 22.5)) {
+      # If player busted => automatic lost
+      playerwin = F
+    } 
+    else if ((dealer == players) || ((dealer == 21.5) && (players == 21.5)) || (players == 0) && (dealer == 0)) {
+    playerwin = NA
+    # Tie conditions
+    }
+    # Dealer busted, player stand or 21
+    else if ((dealer == 0) && ((players < 21) || (players == 21.5) || (players == 22.5))) {
+      playerwin = T
+    }
+  #both player and dealer stand, no one has 21
+  else if ((players < 21) && (dealer < 21)) {
+    if (dealer > players) {
+        playerwin = F
+    }
+  }
+#both player and dealer stand, player has 21, dealder can stand or have a natural or blackjack
+  else if (((players == 21.5) || (players == 22.5)) && (dealer > 21) || (dealer < 21)) {
+    if (((dealer == 22.5) && (players == 21.5))) {
+      playerwin = F
+  }
+    else {
+      playerwin = T
+    }
+  }
+else {
+   playerwin = F
+ }
+
+if (is.na(playerwin)) {
+  return("TIE")
+}
+else if (playerwin == T) {
+  return("PLAYER WIN")
+}
+
+else  {
+  return("PLAYER LOST")
+}
+}
+```
+
+#### Strageties for the player
+If the player initial two cards are less than 21, the player has three SIMPLE strategies:
+1/ Aggressive Gambler: Take cards until busted or reach 21
+2/ Balanced Player: Take one more card then stand
+3/ Cautious Player: Stand no matter how
+#### Aggressive Gambler Function
+```{r}
+aggressive <- function (){
+  # Create a deck of cards
+deck <- rep(c(1:10, 10, 10, 10), 4)
+#Shuffle the deck  
+deck <- sample(deck)
+# Deal two cards to the player and the dealer
+player_hand <- deck[1:2]
+dealer_hand <- deck[3:4]
+# cat("Player hand:", paste(player_hand, collapse = ", "), "\n")
+# cat("Player score:", paste(handValue(player_hand), collapse = ", "), "\n")
+# cat("Dealer hand:", paste(dealer_hand[1], dealer_hand[2], sep = ", "), "\n\n")
+#Player turn: Take cards until busted or reach 21
+while ((handValue(player_hand) < 21) && (handValue(player_hand)) != 0)  {
+# Deal another card to the player
+player_hand <- c(player_hand, deck[length(player_hand) + 3])
+}
+# cat("Player hand:", paste(player_hand, collapse = ", "), "\n")
+# cat("Player score:", paste(handValue(player_hand), collapse = ", "), "\n")
+#Dealer turn: Must hit if under 16 and stay from 17 through 21
+while ((handValue(dealer_hand) <= 16) && (handValue(dealer_hand)) != 0)  {
+      # Deal another card to the dealer
+      dealer_hand <- c(dealer_hand, deck[length(dealer_hand) + 3])
+      #Calculate dealer_hand again
+#      cat("Dealer hand:", paste(dealer_hand), "\n\n")
+#      cat("Dealer score:", paste(handValue(dealer_hand), collapse = ", "), "\n")
+      if ((handValue(dealer_hand) >= 17) && (handValue(dealer_hand) <= 21))
+      {
+        break
+      }
+}
+#Decide who wins 
+winnings(handValue(dealer_hand),handValue(player_hand))
+}
+aggressive <- replicate(1000, aggressive())
+table(aggressive)
+```
+#### Balanced Player Function
+```{r}
+balanced <- function (){
+# Create a deck of cards
+deck <- rep(c(1:10, 10, 10, 10), 4)
+#Shuffle the deck  
+deck <- sample(deck)
+# Deal two cards to the player and the dealer
+player_hand <- deck[1:2]
+dealer_hand <- deck[3:4]
+# cat("Player hand:", paste(player_hand, collapse = ", "), "\n")
+# cat("Player score:", paste(handValue(player_hand), collapse = ", "), "\n")
+# cat("Dealer hand:", paste(dealer_hand[1], dealer_hand[2], sep = ", "), "\n\n")
+
+#Player turn: Take ONLY ONE MORE card if under 21
+
+if (handValue(player_hand) < 21)  {
+# Deal another card to the player
+player_hand <- c(player_hand, deck[length(player_hand) + 3])
+}
+
+# cat("Player hand:", paste(player_hand, collapse = ", "), "\n")
+# cat("Player score:", paste(handValue(player_hand), collapse = ", "), "\n")
+#Dealer turn: Must hit if under 16 and stay from 17 through 21
+while ((handValue(dealer_hand) <= 16) && (handValue(dealer_hand)) != 0)  {
+      # Deal another card to the dealer
+      dealer_hand <- c(dealer_hand, deck[length(dealer_hand) + 3])
+      #Calculate dealer_hand again
+#      cat("Dealer hand:", paste(dealer_hand), "\n\n")
+#      cat("Dealer score:", paste(handValue(dealer_hand), collapse = ", "), "\n")
+      if ((handValue(dealer_hand) >= 17) && (handValue(dealer_hand) <= 21))
+      {
+        break
+      }
+}
+#Decide who wins 
+winnings(handValue(dealer_hand),handValue(player_hand))
+}
+balanced <- replicate(1000, balanced())
+table(balanced)
+```
+#### Cautious Player Function
+```{r}
+cautious <- function (){
+# Create a deck of cards
+deck <- rep(c(1:10, 10, 10, 10), 4)
+#Shuffle the deck  
+deck <- sample(deck)
+# Deal two cards to the player and the dealer
+player_hand <- deck[1:2]
+dealer_hand <- deck[3:4]
+# cat("Player hand:", paste(player_hand, collapse = ", "), "\n")
+# cat("Player score:", paste(handValue(player_hand), collapse = ", "), "\n")
+# cat("Dealer hand:", paste(dealer_hand[1], dealer_hand[2], sep = ", "), "\n\n")
+
+#Player does not do anything
+# cat("Player hand:", paste(player_hand, collapse = ", "), "\n")
+# cat("Player score:", paste(handValue(player_hand), collapse = ", "), "\n")
+#Dealer turn: Must hit if under 16 and stay from 17 through 21
+while ((handValue(dealer_hand) <= 16) && (handValue(dealer_hand)) != 0)  {
+      # Deal another card to the dealer
+      dealer_hand <- c(dealer_hand, deck[length(dealer_hand) + 3])
+      #Calculate dealer_hand again
+#      cat("Dealer hand:", paste(dealer_hand), "\n\n")
+#      cat("Dealer score:", paste(handValue(dealer_hand), collapse = ", "), "\n")
+      if ((handValue(dealer_hand) >= 17) && (handValue(dealer_hand) <= 21))
+      {
+        break
+      }
+}
+#Decide who wins 
+winnings(handValue(dealer_hand),handValue(player_hand))
+}
+cautious <- replicate(1000, cautious())
+table(cautious)
+```
+
+#### Finding of three strageties
+**From what we found, when everything is automatic, the cautious player would have the best win rate compared to the other strategies**
+```{r}
+table(aggressive)
+table(balanced)
+table(cautious)
+```
+#### Card Counting Stragety
+```{r}
+# Set up the count
+count <- 0
+
+# Define the card counting function
+card_count <- function(card) {
+  count <<- count + sum(card %in% 2:6) - sum(card %in% c(10, "J", "Q", "K", "A"))
+  return(count)
+}  
+
+# Define the player's strategy
+# Hit if the running count is 0 or higher, otherwise stand
+  player_action <- function(count) {
+    if (count < 0) {
+     return("stand") 
+    }
+    return("hit")
+  }
+```
+#### Card Counting Advanced Stragety applied in a game
+```{r}
+# Play a single hand of Blackjack
+count = 0
+card_count_stragety <- function(count) {
+  # Shuffle the deck
+deck <- sample(deck)
+# Deal the player's hand
+player_hand <- sample(deck, 2)
+# print(paste("Player Cards", player_hand))
+# print(paste("Count", card_count(player_hand)))
+# Deal the dealer's hand
+dealer_hand <- sample(deck, 2)
+dealer_card <- dealer_hand[1]
+# print(paste("Dealer Cards", dealer_card, " X"))
+# print(paste("Count", card_count(dealer_card)))
+player_action(count)
+
+
+# Player's turn
+while (player_action(count) == "hit") {
+player_hand <- c(player_hand, sample(deck, 1))
+card_count(player_hand[length(player_hand)])
+    if (handValue(player_hand) > 21) {
+      break
+    }
+}
+
+  # Dealer's turn
+while ((handValue(dealer_hand) <= 16) && (handValue(dealer_hand)) != 0)  {
+      # Deal another card to the dealer
+      dealer_hand <- c(dealer_hand, sample(deck, 1))
+      if ((handValue(dealer_hand) >= 17) && (handValue(dealer_hand) <= 21))
+      {
+        break
+      }
+}
+# Determine the winner
+winnings(handValue(dealer_hand),handValue(player_hand))
+}
+card_count_stragety(count)
+```
+#### TESTING
+```{r}
+# Play a single hand of Blackjack
+count = 0
+  # Shuffle the deck
+deck <- sample(deck)
+# Deal the player's hand
+player_hand <- sample(deck, 2)
+player_hand
+print(paste("Count", card_count(player_hand)))
+# Deal the dealer's hand
+dealer_hand <- sample(deck, 2)
+dealer_card <- dealer_hand[1]
+print(paste("Dealer Cards", dealer_card, " X"))
+print(paste("Count", card_count(dealer_card)))
+
+stragety <- player_action(count)
+stragety
+
+# Player's turn: #ERROR is here
+while (stragety == "hit") {
+player_hand <- c(player_hand, sample(deck, 1)) #pick one card
+stragety <- player_action(card_count(player_hand))  #count the card
+    if (handValue(player_hand) > 21) {
+      break
+    }
+}
+player_hand
+stragety
+
+
+
+
+  # Dealer's turn
+while ((handValue(dealer_hand) <= 16) && (handValue(dealer_hand)) != 0)  {
+      # Deal another card to the dealer
+      dealer_hand <- c(dealer_hand, sample(deck, 1))
+      if ((handValue(dealer_hand) >= 17) && (handValue(dealer_hand) <= 21))
+      {
+        break
+      }
+}
+# Determine the winner
+winnings(handValue(dealer_hand),handValue(player_hand))
+```

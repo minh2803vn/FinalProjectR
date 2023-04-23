@@ -660,12 +660,16 @@ table(cautious)
 ```{r}
 # Set up the count
 count <- 0
-
 # Define the card counting function
 card_count <- function(card) {
+  
   count <<- count + sum(card %in% 2:6) - sum(card %in% c(10, "J", "Q", "K", "A"))
   return(count)
-}  
+}
+player_hand <- deck[5:4]
+player_hand
+card_count(player_hand)
+
 
 # Define the player's strategy
 # Hit if the running count is 0 or higher, otherwise stand
@@ -696,12 +700,14 @@ player_action(count)
 
 
 # Player's turn
-while (player_action(count) == "hit") {
-player_hand <- c(player_hand, sample(deck, 1))
-card_count(player_hand[length(player_hand)])
-    if (handValue(player_hand) > 21) {
+while (stragety == "hit") {
+  player
+  if (handValue(player_hand) > 21) {
+      stragety <-"stand"
       break
     }
+player_hand <- c(player_hand, sample(deck, 1)) #pick one card
+stragety <- player_action(card_count(tail(player_hand, 1)))  #count the card
 }
 
   # Dealer's turn
@@ -736,21 +742,17 @@ print(paste("Count", card_count(dealer_card)))
 
 stragety <- player_action(count)
 stragety
-
-# Player's turn: #ERROR is here
+player_hand
 while (stragety == "hit") {
-player_hand <- c(player_hand, sample(deck, 1)) #pick one card
-stragety <- player_action(card_count(player_hand))  #count the card
-    if (handValue(player_hand) > 21) {
+  stragety
+  if (handValue(player_hand) > 21) {
+      stragety = "stand"
       break
     }
+player_hand <- c(player_hand, sample(deck, 1)) #pick one card
+stragety <- player_action(card_count(tail(player_hand, 1)))  #count the card
 }
-player_hand
-stragety
-
-
-
-
+# Player's turn: #ERROR is here
   # Dealer's turn
 while ((handValue(dealer_hand) <= 16) && (handValue(dealer_hand)) != 0)  {
       # Deal another card to the dealer
@@ -762,4 +764,7 @@ while ((handValue(dealer_hand) <= 16) && (handValue(dealer_hand)) != 0)  {
 }
 # Determine the winner
 winnings(handValue(dealer_hand),handValue(player_hand))
+player_hand
+dealer_hand
+
 ```
